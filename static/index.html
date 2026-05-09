@@ -283,7 +283,7 @@ function h(tag,attrs,...children){
   }
   for(const c of children.flat()){
     if(c==null||c===false) continue;
-    el.appendChild(typeof c==='string'?document.createTextNode(c):c);
+    el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
   }
   return el;
 }
