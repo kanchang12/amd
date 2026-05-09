@@ -37,24 +37,32 @@ def init_db():
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                CREATE TABLE IF NOT EXISTS users (
-                    id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL,
-                    email TEXT UNIQUE NOT NULL, password TEXT NOT NULL,
-                    plan TEXT NOT NULL DEFAULT 'free', created_at TIMESTAMP DEFAULT NOW()
+                CREATE TABLE IF NOT EXISTS prompt_users (
+                    id         SERIAL PRIMARY KEY,
+                    username   TEXT UNIQUE NOT NULL,
+                    email      TEXT UNIQUE NOT NULL,
+                    password   TEXT NOT NULL,
+                    plan       TEXT NOT NULL DEFAULT 'free',
+                    created_at TIMESTAMP DEFAULT NOW()
                 );
-                CREATE TABLE IF NOT EXISTS progress (
-                    id SERIAL PRIMARY KEY, username TEXT NOT NULL,
-                    track_id TEXT NOT NULL, task_id INTEGER NOT NULL,
-                    score INTEGER DEFAULT 0, passed BOOLEAN DEFAULT FALSE,
-                    attempts INTEGER DEFAULT 0, last_prompt TEXT DEFAULT '',
-                    last_output TEXT DEFAULT '', updated_at TIMESTAMP DEFAULT NOW(),
+                CREATE TABLE IF NOT EXISTS prompt_progress (
+                    id          SERIAL PRIMARY KEY,
+                    username    TEXT NOT NULL,
+                    track_id    TEXT NOT NULL,
+                    task_id     INTEGER NOT NULL,
+                    score       INTEGER DEFAULT 0,
+                    passed      BOOLEAN DEFAULT FALSE,
+                    attempts    INTEGER DEFAULT 0,
+                    last_prompt TEXT DEFAULT '',
+                    last_output TEXT DEFAULT '',
+                    updated_at  TIMESTAMP DEFAULT NOW(),
                     UNIQUE(username, track_id, task_id)
                 );
             """)
-            cur.execute("SELECT COUNT(*) FROM users")
+            cur.execute("SELECT COUNT(*) FROM prompt_users")
             if cur.fetchone()[0] == 0:
                 cur.executemany(
-                    "INSERT INTO users (username,email,password,plan) VALUES (%s,%s,%s,%s)",
+                    "INSERT INTO prompt_users (username,email,password,plan) VALUES (%s,%s,%s,%s)",
                     [("adult", "adult@promptcraft.ai", "learn123", "free")]
                 )
 
@@ -87,7 +95,7 @@ class SignupRequest(BaseModel):
 def login(req: LoginRequest):
     with get_db() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT * FROM users WHERE username=%s OR email=%s",
+            cur.execute("SELECT * FROM prompt_users WHERE username=%s OR email=%s",
                         (req.username.lower(), req.username.lower()))
             user = cur.fetchone()
     if not user or user["password"] != req.password:
@@ -100,7 +108,7 @@ def signup(req: SignupRequest):
         with get_db() as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO users (username,email,password,plan) VALUES (%s,%s,%s,'free')",
+                    "INSERT INTO prompt_users (username,email,password,plan) VALUES (%s,%s,%s,'free')",
                     (req.username.lower(), req.email.lower(), req.password)
                 )
     except psycopg2.errors.UniqueViolation:
@@ -111,7 +119,7 @@ def signup(req: SignupRequest):
 def upgrade(username: str):
     with get_db() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE users SET plan='pro' WHERE username=%s", (username,))
+            cur.execute("UPDATE prompt_users SET plan='pro' WHERE username=%s", (username,))
     return {"success": True, "plan": "pro", "demo": DEMO_MODE,
             "message": "In production this processes £9.99/month via Stripe. Demo: instant upgrade."}
 
@@ -128,7 +136,7 @@ def track_tasks(track_id: str, username: Optional[str] = None):
         try:
             with get_db() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                    cur.execute("SELECT plan FROM users WHERE username=%s", (username,))
+                    cur.execute("SELECT plan FROM prompt_users WHERE username=%s", (username,))
                     row = cur.fetchone()
                     if row: plan = row["plan"]
         except: pass
@@ -144,13 +152,15 @@ def save_progress(req: ProgressSave):
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO progress (username,track_id,task_id,score,passed,attempts,last_prompt,last_output,updated_at)
+                INSERT INTO prompt_progress (username,track_id,task_id,score,passed,attempts,last_prompt,last_output,updated_at)
                 VALUES (%s,%s,%s,%s,%s,1,%s,%s,NOW())
                 ON CONFLICT (username,track_id,task_id) DO UPDATE SET
-                    score=GREATEST(progress.score,EXCLUDED.score),
-                    passed=GREATEST(progress.passed::int,EXCLUDED.passed::int)::boolean,
-                    attempts=progress.attempts+1, last_prompt=EXCLUDED.last_prompt,
-                    last_output=EXCLUDED.last_output, updated_at=NOW()
+                    score=GREATEST(prompt_progress.score,EXCLUDED.score),
+                    passed=GREATEST(prompt_progress.passed::int,EXCLUDED.passed::int)::boolean,
+                    attempts=prompt_progress.attempts+1,
+                    last_prompt=EXCLUDED.last_prompt,
+                    last_output=EXCLUDED.last_output,
+                    updated_at=NOW()
             """, (req.username,req.track_id,req.task_id,req.score,req.passed,
                   req.last_prompt[:2000],req.last_output[:2000]))
     return {"saved": True}
@@ -159,11 +169,13 @@ def save_progress(req: ProgressSave):
 def get_progress(username: str):
     with get_db() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT track_id,task_id,score,passed,attempts FROM progress WHERE username=%s",(username,))
+            cur.execute(
+                "SELECT track_id,task_id,score,passed,attempts FROM prompt_progress WHERE username=%s",
+                (username,))
             rows = cur.fetchall()
-    return {"username":username,"progress":[dict(r) for r in rows],
-            "completed":sum(1 for r in rows if r["passed"]),
-            "avg_score":round(sum(r["score"] for r in rows)/len(rows),1) if rows else 0}
+    return {"username": username, "progress": [dict(r) for r in rows],
+            "completed": sum(1 for r in rows if r["passed"]),
+            "avg_score": round(sum(r["score"] for r in rows)/len(rows), 1) if rows else 0}
 
 def run_eval_agent(task, user_prompt, ai_output):
     system = "You are EvalAgent. Evaluate prompt submissions strictly. Respond ONLY with valid JSON. No markdown."
@@ -195,9 +207,9 @@ def run_path_agent(username, track_id, task_id, task, score, completed):
     system = "You are PathAgent. Recommend learner's best next step. 2 sentences max. Be specific."
     prompt = f"Passed task {task_id} '{task['title']}' in '{track_id}' with {score}/100.\nTotal passed: {len(completed)}. Tracks started: {completed_tracks or ['none']}.\nUnstarted: {unstarted[:4]}.\nNext in track: {'Task '+str(task_id+1)+' - '+next_task['title'] if next_task else 'Track complete!'}.\nContinue or branch?"
     rec = llm(system, [{"role":"user","content":prompt}], temperature=0.8, max_tokens=120)
-    return {"recommendation":rec,
-            "next_task":{"track_id":track_id,"task_id":task_id+1,"title":next_task["title"]} if next_task else None,
-            "total_passed":len(completed),"agent":"PathAgent"}
+    return {"recommendation": rec,
+            "next_task": {"track_id":track_id,"task_id":task_id+1,"title":next_task["title"]} if next_task else None,
+            "total_passed": len(completed), "agent": "PathAgent"}
 
 class SubmitRequest(BaseModel):
     username: str; track_id: str; task_id: int; user_prompt: str
@@ -208,7 +220,7 @@ def submit(req: SubmitRequest):
     if not task: raise HTTPException(404, "Task not found")
     with get_db() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute("SELECT plan FROM users WHERE username=%s",(req.username,))
+            cur.execute("SELECT plan FROM prompt_users WHERE username=%s", (req.username,))
             row = cur.fetchone(); plan = row["plan"] if row else "free"
     if plan=="free" and task["id"] > TRACKS[req.track_id]["free_limit"]:
         raise HTTPException(403, "This task requires Pro. Upgrade to unlock all 116 tasks.")
@@ -216,27 +228,28 @@ def submit(req: SubmitRequest):
                     [{"role":"user","content":req.user_prompt}], temperature=0.7, max_tokens=600)
     eval_result = run_eval_agent(task, req.user_prompt, ai_output)
     score = eval_result.get("score",0); passed = eval_result.get("passed",False)
-    try: save_progress(ProgressSave(username=req.username,track_id=req.track_id,task_id=req.task_id,
-            score=score,passed=passed,last_prompt=req.user_prompt,last_output=ai_output))
+    try:
+        save_progress(ProgressSave(username=req.username, track_id=req.track_id, task_id=req.task_id,
+            score=score, passed=passed, last_prompt=req.user_prompt, last_output=ai_output))
     except: pass
-    coach = run_coach_agent(task,req.user_prompt,score,eval_result.get("what_missed","")) if not passed else None
+    coach = run_coach_agent(task, req.user_prompt, score, eval_result.get("what_missed","")) if not passed else None
     path = None
     if passed:
         try:
             with get_db() as conn:
                 with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                    cur.execute("SELECT track_id,task_id,score FROM progress WHERE username=%s AND passed=true",(req.username,))
+                    cur.execute("SELECT track_id,task_id,score FROM prompt_progress WHERE username=%s AND passed=true", (req.username,))
                     completed = cur.fetchall()
         except: completed=[]
-        path = run_path_agent(req.username,req.track_id,req.task_id,task,score,completed)
-    return {"ai_output":ai_output,"eval":eval_result,"coach":coach,"path":path}
+        path = run_path_agent(req.username, req.track_id, req.task_id, task, score, completed)
+    return {"ai_output": ai_output, "eval": eval_result, "coach": coach, "path": path}
 
-@app.get("/",response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)
 def index(): return FileResponse("static/index.html")
 
-@app.get("/{path:path}",response_class=HTMLResponse)
-def catch_all(path:str): return FileResponse("static/index.html")
+@app.get("/{path:path}", response_class=HTMLResponse)
+def catch_all(path: str): return FileResponse("static/index.html")
 
-if __name__=="__main__":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("PORT", 8080)), reload=False)
