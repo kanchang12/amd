@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PromptCraft — Master AI in 3 Weeks</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f11;--bg2:#18181b;--bg3:#27272a;--border:#3f3f46;
+  --text:#f4f4f5;--muted:#a1a1aa;--accent:#7C3AED;--accent2:#9f67ff;
+  --green:#059669;--red:#dc2626;--yellow:#d97706;--blue:#0284C7;
+  --radius:10px;--font:'Inter',system-ui,sans-serif
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--font);cursor:pointer;border:none;outline:none}
+input,textarea{font-family:var(--font);outline:none}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ── AUTH ── */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 50% 0%,#2d1b5e 0%,var(--bg) 60%)}
+.auth-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px 36px;width:100%;max-width:400px}
+.auth-logo{font-size:24px;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#a78bfa,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-sub{font-size:13px;color:var(--muted);margin-bottom:28px}
+.auth-label{font-size:12px;font-weight:600;color:var(--muted);display:block;margin-bottom:5px}
+.auth-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:10px 12px;border-radius:8px;font-size:14px;margin-bottom:14px;transition:border .15s}
+.auth-input:focus{border-color:var(--accent)}
+.auth-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border-radius:8px;font-size:15px;font-weight:700;margin-top:4px;transition:opacity .2s}
+.auth-btn:hover{opacity:.9}
+.auth-err{font-size:12px;color:var(--red);margin-bottom:10px}
+.auth-switch{font-size:13px;color:var(--muted);text-align:center;margin-top:18px}
+.auth-switch span{color:var(--accent2);cursor:pointer;font-weight:600}
+.auth-switch span:hover{text-decoration:underline}
+.demo-creds{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin-bottom:16px}
+.demo-creds b{color:var(--text)}
+
+/* ── APP SHELL ── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-top{padding:18px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.s-logo{font-size:18px;font-weight:800;background:linear-gradient(135deg,#a78bfa,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.s-user{display:flex;align-items:center;gap:8px;margin-top:12px}
+.s-avatar{width:30px;height:30px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.s-uname{font-size:13px;font-weight:600;flex:1}
+.s-plan{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700}
+.plan-free{background:#3f3f46;color:#a1a1aa}
+.plan-pro{background:#4c1d95;color:#c4b5fd}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 10px}
+.nav-section{font-size:10px;font-weight:700;color:var(--muted);padding:10px 6px 6px;text-transform:uppercase;letter-spacing:.08em}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px;transition:all .15s;font-size:13px;font-weight:500;color:var(--muted)}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(124,58,237,.15);color:#a78bfa}
+.nav-item .ni-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+.nav-item .ni-label{flex:1}
+.nav-item .ni-count{font-size:10px;color:var(--muted)}
+.nav-progress{height:3px;background:var(--bg3);border-radius:3px;margin:4px 10px 0;overflow:hidden}
+.nav-progress-fill{height:100%;border-radius:3px;transition:width .5s}
+.sidebar-bottom{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0}
+.upgrade-box{background:linear-gradient(135deg,#2d1b5e,#1e1b4b);border:1px solid #4c1d95;border-radius:10px;padding:14px;margin-bottom:12px}
+.ub-title{font-size:13px;font-weight:700;color:#c4b5fd;margin-bottom:4px}
+.ub-desc{font-size:11px;color:#7c6bad;margin-bottom:10px;line-height:1.4}
+.ub-price{font-size:18px;font-weight:800;color:#a78bfa;margin-bottom:10px}
+.ub-price span{font-size:12px;font-weight:400;color:#7c6bad}
+.demo-notice{font-size:10px;color:#7c6bad;margin-bottom:8px;line-height:1.4}
+.ub-btn{width:100%;padding:10px;background:var(--accent);color:#fff;border-radius:8px;font-size:13px;font-weight:700;transition:all .2s}
+.ub-btn:hover{background:var(--accent2)}
+.logout-btn{width:100%;padding:8px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:12px;transition:all .15s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.main-header{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;background:var(--bg2)}
+.mh-title{font-size:18px;font-weight:700;flex:1}
+.mh-sub{font-size:12px;color:var(--muted)}
+.main-content{flex:1;overflow-y:auto;padding:24px}
+
+/* ── DASHBOARD ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.sc-val{font-size:28px;font-weight:800;margin-bottom:2px}
+.sc-label{font-size:12px;color:var(--muted)}
+.tracks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.track-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;position:relative}
+.track-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(124,58,237,.15)}
+.tc-icon{font-size:28px;margin-bottom:10px}
+.tc-title{font-size:15px;font-weight:700;margin-bottom:4px}
+.tc-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.tc-meta{display:flex;align-items:center;justify-content:space-between}
+.tc-count{font-size:11px;color:var(--muted)}
+.tc-bar{height:3px;background:var(--bg3);border-radius:3px;margin-top:10px;overflow:hidden}
+.tc-fill{height:100%;border-radius:3px}
+.tc-locked{position:absolute;top:12px;right:12px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:10px;background:#3f3f46;color:var(--muted)}
+
+/* ── TRACK VIEW ── */
+.track-header{margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.th-icon{font-size:36px;margin-bottom:8px}
+.th-title{font-size:22px;font-weight:800;margin-bottom:4px}
+.th-desc{font-size:14px;color:var(--muted);margin-bottom:12px}
+.task-list{display:flex;flex-direction:column;gap:10px}
+.task-row{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:14px}
+.task-row:hover{border-color:var(--accent)}
+.task-row.locked{opacity:.5;cursor:not-allowed}
+.task-row.passed{border-color:var(--green)}
+.tr-num{font-size:12px;color:var(--muted);font-weight:700;width:24px;flex-shrink:0}
+.tr-info{flex:1;min-width:0}
+.tr-title{font-size:14px;font-weight:700;margin-bottom:2px}
+.tr-desc{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;flex-shrink:0}
+.badge-beginner{background:#052e16;color:#86efac}
+.badge-intermediate{background:#1c1917;color:#fbbf24}
+.badge-advanced{background:#1e1b4b;color:#a78bfa}
+.tr-score{font-size:13px;font-weight:700;flex-shrink:0}
+.tr-lock{font-size:16px;flex-shrink:0}
+
+/* ── TASK WORKSPACE ── */
+.workspace{display:grid;grid-template-columns:1fr 360px;gap:20px;height:100%}
+.ws-left{display:flex;flex-direction:column;gap:16px;min-width:0}
+.ws-right{display:flex;flex-direction:column;gap:16px}
+.ws-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.wc-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--bg3)}
+.wc-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;flex:1}
+.wc-body{padding:16px}
+.task-title-ws{font-size:20px;font-weight:800;margin-bottom:4px}
+.task-desc-ws{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:12px}
+.task-instruction{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:8px;padding:12px;font-size:13px;color:#c4b5fd;line-height:1.5;margin-bottom:12px}
+.ti-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent2);margin-bottom:4px}
+.task-example{background:var(--bg3);border-radius:8px;padding:12px;font-size:12px;color:var(--muted);line-height:1.6;font-family:monospace}
+.te-label{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;display:block}
+.prompt-area{width:100%;min-height:160px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:14px;color:var(--text);resize:vertical;line-height:1.6;transition:border .15s}
+.prompt-area:focus{border-color:var(--accent)}
+.prompt-area::placeholder{color:#52525b}
+.submit-row{display:flex;gap:10px;align-items:center}
+.submit-btn{padding:12px 28px;background:var(--accent);color:#fff;border-radius:8px;font-size:14px;font-weight:700;transition:all .2s;display:flex;align-items:center;gap:8px}
+.submit-btn:hover:not(:disabled){background:var(--accent2)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.char-count{font-size:12px;color:var(--muted)}
+.output-pre{background:var(--bg3);padding:14px;font-family:monospace;font-size:13px;line-height:1.6;white-space:pre-wrap;color:var(--text);min-height:80px;border-radius:6px;max-height:300px;overflow-y:auto}
+.output-empty{color:var(--muted);font-size:13px;padding:20px;text-align:center}
+
+/* ── EVAL PANEL ── */
+.score-display{text-align:center;padding:20px 0 16px}
+.score-num{font-size:52px;font-weight:900;line-height:1}
+.score-grade{font-size:14px;font-weight:700;margin-top:4px}
+.score-bar{height:6px;background:var(--bg3);border-radius:6px;margin:12px 0;overflow:hidden}
+.score-fill{height:100%;border-radius:6px;transition:width 1s ease}
+.eval-row{display:flex;gap:10px;margin-bottom:10px}
+.eval-box{flex:1;background:var(--bg3);border-radius:8px;padding:12px}
+.eb-label{font-size:10px;font-weight:700;text-transform:uppercase;color:var(--muted);margin-bottom:5px;letter-spacing:.05em}
+.eb-text{font-size:12px;line-height:1.5;color:var(--text)}
+.verdict-box{background:var(--bg3);border-radius:8px;padding:12px;font-size:13px;font-weight:600;text-align:center}
+.coach-box{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:14px;font-size:13px;line-height:1.6;color:#fde68a}
+.coach-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--yellow);margin-bottom:6px;display:block}
+.path-box{background:rgba(5,150,105,.08);border:1px solid rgba(5,150,105,.3);border-radius:8px;padding:14px}
+.path-label{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--green);margin-bottom:6px;display:block}
+.path-text{font-size:13px;line-height:1.6;color:#6ee7b7;margin-bottom:10px}
+.next-task-btn{width:100%;padding:10px;background:var(--green);color:#fff;border-radius:8px;font-size:13px;font-weight:700;transition:opacity .2s}
+.next-task-btn:hover{opacity:.9}
+.agent-tag{font-size:10px;color:var(--muted);text-align:right;margin-top:8px}
+
+/* ── PAYMENT MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(4px)}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:440px;overflow:hidden}
+.modal-header{padding:24px 24px 0;text-align:center}
+.modal-title{font-size:22px;font-weight:800;margin-bottom:6px}
+.modal-sub{font-size:14px;color:var(--muted)}
+.modal-body{padding:24px}
+.price-display{text-align:center;padding:20px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:20px}
+.pd-price{font-size:40px;font-weight:900;background:linear-gradient(135deg,#a78bfa,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.pd-per{font-size:14px;color:var(--muted)}
+.features-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.features-list li{display:flex;align-items:center;gap:8px;font-size:13px}
+.features-list .check{color:var(--green);font-size:16px;flex-shrink:0}
+.demo-banner{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:12px;margin-bottom:16px;text-align:center}
+.db-title{font-size:13px;font-weight:700;color:#fde68a;margin-bottom:4px}
+.db-text{font-size:12px;color:#ca8a04;line-height:1.4}
+.pay-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border-radius:10px;font-size:15px;font-weight:800;margin-bottom:10px;transition:all .2s;position:relative}
+.pay-btn:hover{background:var(--accent2)}
+.close-modal{width:100%;padding:10px;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;font-size:13px}
+.close-modal:hover{border-color:var(--text);color:var(--text)}
+.success-modal{text-align:center;padding:32px}
+.sm-icon{font-size:52px;margin-bottom:12px}
+.sm-title{font-size:22px;font-weight:800;margin-bottom:6px}
+.sm-text{font-size:14px;color:var(--muted);margin-bottom:20px;line-height:1.5}
+.sm-btn{padding:12px 32px;background:var(--accent);color:#fff;border-radius:8px;font-size:14px;font-weight:700}
+
+/* ── SPINNER ── */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .5s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .workspace{grid-template-columns:1fr}
+  .ws-right{order:-1}
+}
+@media(max-width:680px){
+  .sidebar{position:fixed;left:-260px;top:0;bottom:0;z-index:50;transition:left .25s;box-shadow:4px 0 20px rgba(0,0,0,.5)}
+  .sidebar.open{left:0}
+  .mobile-menu{display:flex;align-items:center;justify-content:center;width:40px;height:40px;background:var(--bg3);border-radius:8px;font-size:20px;cursor:pointer;border:1px solid var(--border)}
+  .tracks-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+@media(min-width:681px){.mobile-menu{display:none}}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;padding:6px 10px;border-radius:6px;transition:all .15s;border:none;background:none}
+.back-btn:hover{background:var(--bg3);color:var(--text)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const API = '';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let S = {
+  view: 'login',    // login | signup | dashboard | track | task
+  user: null,       // {username, email, plan}
+  tracks: [],
+  progress: {},     // {track_id_taskid: {score, passed}}
+  currentTrack: null,
+  currentTask: null,
+  trackTasks: [],
+  prompt: '',
+  aiOutput: '',
+  evalResult: null,
+  coachHint: null,
+  pathResult: null,
+  loading: false,
+  submitting: false,
+  authErr: '',
+  loginForm: {u:'', p:''},
+  signupForm: {u:'', e:'', p:''},
+  showUpgradeModal: false,
+  upgradeSuccess: false,
+  sidebarOpen: false,
+};
+
+function ss(p) { S = Object.assign({}, S, p); render(); }
+
+// ── API helpers ────────────────────────────────────────────────────────────────
+async function api(path, body, method='POST') {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Request failed');
+  return data;
+}
+async function apiGet(path) {
+  const res = await fetch(API + path);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.detail || 'Failed');
+  return data;
+}
+
+async function loadProgress(username) {
+  try {
+    const data = await apiGet(`/api/progress/${username}`);
+    const map = {};
+    data.progress.forEach(p => { map[`${p.track_id}_${p.task_id}`] = p; });
+    ss({ progress: map });
+  } catch(e) {}
+}
+
+async function loadTracks() {
+  try {
+    const data = await apiGet('/api/tracks');
+    ss({ tracks: data.tracks });
+  } catch(e) {}
+}
+
+async function loadTrackTasks(trackId) {
+  try {
+    const data = await apiGet(`/api/tracks/${trackId}/tasks?username=${S.user?.username}`);
+    ss({ trackTasks: data.tasks });
+  } catch(e) {}
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  ss({loading:true,authErr:''});
+  try {
+    const user = await api('/api/login', {username:S.loginForm.u, password:S.loginForm.p});
+    await loadTracks();
+    await loadProgress(user.username);
+    ss({user, view:'dashboard', loading:false});
+  } catch(e) { ss({authErr:e.message,loading:false}); }
+}
+
+async function doSignup() {
+  if(!S.signupForm.u||!S.signupForm.e||!S.signupForm.p){ss({authErr:'All fields required'});return;}
+  ss({loading:true,authErr:''});
+  try {
+    const user = await api('/api/signup', {username:S.signupForm.u,email:S.signupForm.e,password:S.signupForm.p});
+    await loadTracks();
+    ss({user, view:'dashboard', loading:false});
+  } catch(e) { ss({authErr:e.message,loading:false}); }
+}
+
+async function doUpgrade() {
+  ss({loading:true});
+  try {
+    await api(`/api/upgrade/${S.user.username}`);
+    const user = {...S.user, plan:'pro'};
+    await loadTrackTasks(S.currentTrack?.id || '');
+    ss({user, upgradeSuccess:true, loading:false});
+  } catch(e) { ss({loading:false}); }
+}
+
+// ── Submit (3 agents) ─────────────────────────────────────────────────────────
+async function doSubmit() {
+  if(!S.prompt.trim()) return;
+  ss({submitting:true, aiOutput:'', evalResult:null, coachHint:null, pathResult:null});
+  try {
+    const result = await api('/api/submit', {
+      username: S.user.username,
+      track_id: S.currentTrack.id,
+      task_id: S.currentTask.id,
+      user_prompt: S.prompt
+    });
+    await loadProgress(S.user.username);
+    ss({
+      submitting: false,
+      aiOutput: result.ai_output,
+      evalResult: result.eval,
+      coachHint: result.coach,
+      pathResult: result.path,
+    });
+  } catch(e) {
+    if(e.message.includes('Pro plan')) {
+      ss({submitting:false, showUpgradeModal:true});
+    } else {
+      ss({submitting:false, aiOutput:'Error: '+e.message});
+    }
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+async function openTrack(track) {
+  await loadTrackTasks(track.id);
+  ss({view:'track', currentTrack:track, currentTask:null, prompt:'', aiOutput:'', evalResult:null, coachHint:null, pathResult:null});
+}
+
+function openTask(task) {
+  if(task.locked) { ss({showUpgradeModal:true}); return; }
+  ss({view:'task', currentTask:task, prompt:'', aiOutput:'', evalResult:null, coachHint:null, pathResult:null});
+}
+
+function goNext() {
+  const path = S.pathResult?.next_task;
+  if(!path) return;
+  const next = S.trackTasks.find(t => t.id === path.task_id);
+  if(next) openTask(next);
+}
+
+// ── DOM ───────────────────────────────────────────────────────────────────────
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  for(const [k,v] of Object.entries(attrs||{})) {
+    if(k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if(k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if(k === 'className') el.className = v;
+    else el.setAttribute(k, v);
+  }
+  for(const c of children.flat()) {
+    if(c == null || c === false) continue;
+    el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+  }
+  return el;
+}
+
+// ── Score colour ──────────────────────────────────────────────────────────────
+function scoreColor(s) {
+  if(s >= 80) return '#10b981';
+  if(s >= 60) return '#f59e0b';
+  return '#ef4444';
+}
+
+// ── Progress helpers ──────────────────────────────────────────────────────────
+function trackProgress(trackId, tasks) {
+  const done = tasks ? tasks.filter(t => S.progress[`${trackId}_${t.id}`]?.passed).length : 0;
+  const total = tasks ? tasks.length : 0;
+  return { done, total, pct: total ? Math.round(done/total*100) : 0 };
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────────────────────
+
+function renderAuth() {
+  const isLogin = S.view === 'login';
+  return h('div',{className:'auth-wrap'},
+    h('div',{className:'auth-card'},
+      h('div',{className:'auth-logo'},['✦ PromptCraft']),
+      h('div',{className:'auth-sub'},['Master AI in 3 weeks. 12 tracks. 116 tasks.']),
+      h('div',{className:'demo-creds'},
+        h('b',{},'Demo accounts: '),
+        ' demo / demo123 (free)  ·  pro / pro123 (pro)'
+      ),
+      S.authErr && h('div',{className:'auth-err'}, S.authErr),
+      isLogin ? [
+        h('label',{className:'auth-label'},'Username or email'),
+        h('input',{type:'text',className:'auth-input',placeholder:'demo',value:S.loginForm.u,
+          onInput:e=>S.loginForm.u=e.target.value,
+          onKeydown:e=>{if(e.key==='Enter')doLogin()}}),
+        h('label',{className:'auth-label'},'Password'),
+        h('input',{type:'password',className:'auth-input',placeholder:'••••••••',value:S.loginForm.p,
+          onInput:e=>S.loginForm.p=e.target.value,
+          onKeydown:e=>{if(e.key==='Enter')doLogin()}}),
+        h('button',{className:'auth-btn',onClick:doLogin},
+          S.loading ? h('span',{className:'spin'}) : 'Sign In →'
+        ),
+        h('div',{className:'auth-switch'},
+          'No account? ',h('span',{onClick:()=>ss({view:'signup',authErr:''})},'Create one free')
+        )
+      ] : [
+        h('label',{className:'auth-label'},'Username'),
+        h('input',{type:'text',className:'auth-input',placeholder:'yourname',value:S.signupForm.u,
+          onInput:e=>S.signupForm.u=e.target.value}),
+        h('label',{className:'auth-label'},'Email'),
+        h('input',{type:'email',className:'auth-input',placeholder:'you@email.com',value:S.signupForm.e,
+          onInput:e=>S.signupForm.e=e.target.value}),
+        h('label',{className:'auth-label'},'Password'),
+        h('input',{type:'password',className:'auth-input',placeholder:'••••••••',value:S.signupForm.p,
+          onInput:e=>S.signupForm.p=e.target.value}),
+        h('button',{className:'auth-btn',onClick:doSignup},
+          S.loading ? h('span',{className:'spin'}) : 'Create Free Account →'
+        ),
+        h('div',{className:'auth-switch'},
+          'Already have an account? ',h('span',{onClick:()=>ss({view:'login',authErr:''})},'Sign in')
+        )
+      ]
+    )
+  );
+}
+
+function renderSidebar() {
+  const u = S.user;
+  const totalDone = Object.values(S.progress).filter(p=>p.passed).length;
+  return h('nav',{className:`sidebar ${S.sidebarOpen?'open':''}`},
+    h('div',{className:'sidebar-top'},
+      h('div',{className:'s-logo'},'✦ PromptCraft'),
+      h('div',{className:'s-user'},
+        h('div',{className:'s-avatar'},[u?.username?.[0]?.toUpperCase()||'?']),
+        h('span',{className:'s-uname'},u?.username||''),
+        h('span',{className:`s-plan plan-${u?.plan}`},u?.plan?.toUpperCase()||'FREE')
+      )
+    ),
+    h('div',{className:'sidebar-nav'},
+      h('div',{className:'nav-section'},'Navigation'),
+      h('div',{className:`nav-item ${S.view==='dashboard'?'active':''}`,onClick:()=>ss({view:'dashboard',sidebarOpen:false})},
+        h('span',{className:'ni-icon'},'🏠'),h('span',{className:'ni-label'},'Dashboard'),
+        h('span',{className:'ni-count'},`${totalDone} done`)
+      ),
+      h('div',{className:'nav-section'},'Tracks'),
+      ...S.tracks.map(track => {
+        const prog = trackProgress(track.id, null);
+        const active = S.currentTrack?.id === track.id;
+        return [
+          h('div',{className:`nav-item ${active?'active':''}`,
+            onClick:()=>{openTrack(track);ss({sidebarOpen:false})}},
+            h('span',{className:'ni-icon'},track.icon),
+            h('span',{className:'ni-label'},track.title),
+            h('span',{className:'ni-count'},track.task_count+'t')
+          ),
+        ]
+      })
+    ),
+    h('div',{className:'sidebar-bottom'},
+      u?.plan === 'free' && h('div',{className:'upgrade-box'},
+        h('div',{className:'ub-title'},'🚀 Upgrade to Pro'),
+        h('div',{className:'ub-desc'},'Unlock all 116 tasks across every track'),
+        h('div',{className:'ub-price'},'£9.99',h('span',{},' / month')),
+        h('div',{className:'demo-notice'},'⚡ Hackathon demo: click to simulate payment instantly'),
+        h('button',{className:'ub-btn',onClick:()=>ss({showUpgradeModal:true})},'Upgrade to Pro →')
+      ),
+      h('button',{className:'logout-btn',onClick:()=>ss({view:'login',user:null,progress:{},tracks:[]})},'Sign out')
+    )
+  );
+}
+
+function renderDashboard() {
+  const totalDone = Object.values(S.progress).filter(p=>p.passed).length;
+  const totalTasks = S.tracks.reduce((a,t)=>a+t.task_count,0);
+  const avgScore = Object.values(S.progress).length ?
+    Math.round(Object.values(S.progress).reduce((a,p)=>a+p.score,0)/Object.values(S.progress).length) : 0;
+  return h('div',{},
+    h('div',{className:'stats-row'},
+      h('div',{className:'stat-card'},h('div',{className:'sc-val',style:{color:'#a78bfa'}},totalDone),h('div',{className:'sc-label'},'Tasks passed')),
+      h('div',{className:'stat-card'},h('div',{className:'sc-val',style:{color:'#60a5fa'}},totalTasks),h('div',{className:'sc-label'},'Total tasks')),
+      h('div',{className:'stat-card'},h('div',{className:'sc-val',style:{color:scoreColor(avgScore)}},avgScore||'—'),h('div',{className:'sc-label'},'Avg score')),
+      h('div',{className:'stat-card'},h('div',{className:'sc-val',style:{color:'#34d399'}},S.tracks.length),h('div',{className:'sc-label'},'Tracks')),
+    ),
+    h('div',{className:'tracks-grid'},
+      ...S.tracks.map(track => {
+        const taskList = Array.from({length:track.task_count},(_,i)=>({id:i+1}));
+        const {done, pct} = trackProgress(track.id, taskList);
+        return h('div',{className:'track-card',onClick:()=>openTrack(track)},
+          h('div',{className:'tc-icon'},track.icon),
+          h('div',{className:'tc-title'},track.title),
+          h('div',{className:'tc-desc'},track.desc),
+          h('div',{className:'tc-meta'},
+            h('span',{className:'tc-count'},`${done}/${track.task_count} done`),
+            S.user?.plan==='free' && h('span',{className:'tc-locked'},'🔒 '+track.free_limit+' free')
+          ),
+          h('div',{className:'tc-bar'},
+            h('div',{className:'tc-fill',style:{width:pct+'%',background:track.color}})
+          )
+        );
+      })
+    )
+  );
+}
+
+function renderTrack() {
+  const track = S.currentTrack;
+  if(!track) return h('div',{},'Loading...');
+  return h('div',{},
+    h('div',{className:'track-header'},
+      h('div',{className:'th-icon'},track.icon),
+      h('div',{className:'th-title'},track.title),
+      h('div',{className:'th-desc'},track.desc),
+    ),
+    h('div',{className:'task-list'},
+      ...S.trackTasks.map(task => {
+        const prog = S.progress[`${track.id}_${task.id}`];
+        const passed = prog?.passed;
+        const score = prog?.score;
+        return h('div',{
+          className:`task-row ${task.locked?'locked':''} ${passed?'passed':''}`,
+          onClick:()=>openTask(task)
+        },
+          h('div',{className:'tr-num'},[String(task.id).padStart(2,'0')]),
+          h('div',{className:'tr-info'},
+            h('div',{className:'tr-title'},task.title),
+            h('div',{className:'tr-desc'},task.desc)
+          ),
+          h('span',{className:`tr-badge badge-${task.difficulty}`},task.difficulty),
+          passed && h('span',{className:'tr-score',style:{color:scoreColor(score)}},score+'%'),
+          task.locked && h('span',{className:'tr-lock'},'🔒'),
+          passed && h('span',{style:{color:'#10b981',fontSize:'18px'}},'✓')
+        );
+      })
+    )
+  );
+}
+
+function renderTask() {
+  const task = S.currentTask;
+  const track = S.currentTrack;
+  if(!task) return h('div',{},'Loading...');
+
+  const prog = S.progress[`${track.id}_${task.id}`];
+  const passed = prog?.passed;
+
+  return h('div',{className:'workspace'},
+    // Left column
+    h('div',{className:'ws-left'},
+      // Task info
+      h('div',{className:'ws-card'},
+        h('div',{className:'wc-header'},
+          h('span',{className:'wc-title'},[`${track.icon} ${track.title} · Task ${task.id}`]),
+          passed && h('span',{style:{fontSize:'12px',color:'#10b981',fontWeight:'700'}},'✓ Passed')
+        ),
+        h('div',{className:'wc-body'},
+          h('div',{className:'task-title-ws'},task.title),
+          h('span',{className:`tr-badge badge-${task.difficulty}`,style:{marginBottom:'12px',display:'inline-block'}},task.difficulty),
+          h('div',{className:'task-desc-ws'},task.desc),
+          h('div',{className:'task-instruction'},
+            h('div',{className:'ti-label'},'📋 Your task'),
+            task.instruction
+          ),
+          task.example && h('div',{},
+            h('span',{className:'te-label'},'💡 Example starter'),
+            h('pre',{className:'task-example'},task.example)
+          )
+        )
+      ),
+      // Prompt input
+      h('div',{className:'ws-card'},
+        h('div',{className:'wc-header'},
+          h('span',{className:'wc-title'},'✍️ Write your prompt'),
+        ),
+        h('div',{className:'wc-body'},
+          h('textarea',{className:'prompt-area',placeholder:'Write your prompt here...\n\nBe specific, assign roles, add context, specify format.\nThe better your prompt, the higher your score.',
+            value:S.prompt,
+            onInput:e=>S.prompt=e.target.value
+          }),
+          h('div',{className:'submit-row',style:{marginTop:'12px'}},
+            h('button',{className:'submit-btn',disabled:S.submitting||!S.prompt.trim(),onClick:doSubmit},
+              S.submitting ? [h('span',{className:'spin'}),' Evaluating...'] : '▶ Submit & Evaluate'
+            ),
+            h('span',{className:'char-count'},`${S.prompt.length} chars`)
+          )
+        )
+      ),
+      // AI Output
+      S.aiOutput && h('div',{className:'ws-card'},
+        h('div',{className:'wc-header'},h('span',{className:'wc-title'},'🤖 AI Response')),
+        h('div',{className:'wc-body'},
+          h('pre',{className:'output-pre'},S.aiOutput)
+        )
+      ),
+    ),
+    // Right column — Agents panel
+    h('div',{className:'ws-right'},
+      h('div',{className:'ws-card'},
+        h('div',{className:'wc-header'},h('span',{className:'wc-title'},'🧠 Agent Evaluation')),
+        h('div',{className:'wc-body'},
+          !S.evalResult && !S.submitting && h('div',{className:'output-empty'},
+            'Write a prompt and hit ▶ Submit.\nThree AI agents will evaluate your work.'
+          ),
+          S.submitting && h('div',{className:'output-empty'},
+            h('span',{className:'spin'}), ' Running 3 agents...'
+          ),
+          S.evalResult && [
+            // Score
+            h('div',{className:'score-display'},
+              h('div',{className:'score-num',style:{color:scoreColor(S.evalResult.score)}},S.evalResult.score),
+              h('div',{className:'score-grade',style:{color:scoreColor(S.evalResult.score)}},
+                `Grade ${S.evalResult.grade} · ${S.evalResult.passed?'✅ PASSED':'❌ Not yet'}`
+              )
+            ),
+            h('div',{className:'score-bar'},
+              h('div',{className:'score-fill',style:{width:S.evalResult.score+'%',background:scoreColor(S.evalResult.score)}})
+            ),
+            h('div',{className:'verdict-box'},`"${S.evalResult.verdict}"`),
+            h('div',{className:'eval-row',style:{marginTop:'12px'}},
+              h('div',{className:'eval-box'},
+                h('div',{className:'eb-label'},'✅ Worked'),
+                h('div',{className:'eb-text'},S.evalResult.what_worked)
+              ),
+              S.evalResult.what_missed && h('div',{className:'eval-box'},
+                h('div',{className:'eb-label'},'⚠️ Missed'),
+                h('div',{className:'eb-text'},S.evalResult.what_missed)
+              )
+            ),
+            h('div',{className:'agent-tag'},'EvalAgent'),
+          ]
+        )
+      ),
+      // Coach hint
+      S.coachHint && h('div',{className:'ws-card'},
+        h('div',{className:'wc-header'},h('span',{className:'wc-title'},'🎯 Coach Hint')),
+        h('div',{className:'wc-body'},
+          h('div',{className:'coach-box'},
+            h('span',{className:'coach-label'},'CoachAgent says'),
+            S.coachHint
+          ),
+          h('div',{className:'agent-tag'},'CoachAgent fired because score < 70')
+        )
+      ),
+      // Path recommendation
+      S.pathResult && h('div',{className:'ws-card'},
+        h('div',{className:'wc-header'},h('span',{className:'wc-title'},'🗺️ Your Path')),
+        h('div',{className:'wc-body'},
+          h('div',{className:'path-box'},
+            h('span',{className:'path-label'},'PathAgent recommends'),
+            h('div',{className:'path-text'},S.pathResult.recommendation)
+          ),
+          S.pathResult.next_task && h('button',{className:'next-task-btn',style:{marginTop:'10px'},onClick:goNext},
+            `Next: ${S.pathResult.next_task.title} →`
+          ),
+          h('div',{className:'agent-tag'},'PathAgent · '+S.pathResult.total_passed+' tasks passed total')
+        )
+      ),
+    )
+  );
+}
+
+function renderUpgradeModal() {
+  if(!S.showUpgradeModal) return null;
+  if(S.upgradeSuccess) {
+    return h('div',{className:'modal-overlay',onClick:(e)=>{if(e.target.className==='modal-overlay')ss({showUpgradeModal:false,upgradeSuccess:false})}},
+      h('div',{className:'modal'},
+        h('div',{className:'success-modal'},
+          h('div',{className:'sm-icon'},'🎉'),
+          h('div',{className:'sm-title'},'You\'re now Pro!'),
+          h('div',{className:'sm-text'},
+            'All 116 tasks across 12 tracks are now unlocked.\n\nIn production this would process £9.99/month via Stripe. This is a hackathon demo.'
+          ),
+          h('button',{className:'sm-btn',onClick:async()=>{
+            await loadTrackTasks(S.currentTrack?.id||'prompt_basics');
+            ss({showUpgradeModal:false,upgradeSuccess:false});
+          }},'Start Learning →')
+        )
+      )
+    );
+  }
+  return h('div',{className:'modal-overlay',onClick:(e)=>{if(e.target.className==='modal-overlay')ss({showUpgradeModal:false})}},
+    h('div',{className:'modal'},
+      h('div',{className:'modal-header'},
+        h('div',{className:'modal-title'},'🚀 Upgrade to Pro'),
+        h('div',{className:'modal-sub'},'Unlock everything. Learn faster.')
+      ),
+      h('div',{className:'modal-body'},
+        h('div',{className:'price-display'},
+          h('div',{className:'pd-price'},'£9.99'),
+          h('div',{className:'pd-per'},'per month · cancel anytime')
+        ),
+        h('ul',{className:'features-list'},
+          ['All 116 tasks across 12 tracks','EvalAgent + CoachAgent + PathAgent on every task','Progress tracking & scoring','Priority model access','New tracks added monthly'].map(f=>
+            h('li',{},h('span',{className:'check'},'✓'),f)
+          )
+        ),
+        h('div',{className:'demo-banner'},
+          h('div',{className:'db-title'},'⚡ Hackathon Demo Mode'),
+          h('div',{className:'db-text'},'In production: Stripe processes real payment.\nHere: click below to instantly simulate a Pro upgrade.')
+        ),
+        h('button',{className:'pay-btn',onClick:doUpgrade},
+          S.loading ? [h('span',{className:'spin'}),' Processing...'] : '🔓 Activate Pro (Demo)'
+        ),
+        h('button',{className:'close-modal',onClick:()=>ss({showUpgradeModal:false})},'Maybe later')
+      )
+    )
+  );
+}
+
+// ── Main render ────────────────────────────────────────────────────────────────
+function render() {
+  const root = document.getElementById('root');
+  root.innerHTML = '';
+
+  if(S.view === 'login' || S.view === 'signup') {
+    root.appendChild(renderAuth());
+    return;
+  }
+
+  const shell = h('div',{className:'shell'});
+  shell.appendChild(renderSidebar());
+
+  const main = h('div',{className:'main'});
+
+  // Mobile menu + header
+  const header = h('div',{className:'main-header'},
+    h('button',{className:'mobile-menu',onClick:()=>ss({sidebarOpen:!S.sidebarOpen})},'☰'),
+    h('div',{},
+      h('div',{className:'mh-title'},
+        S.view==='dashboard' ? 'Dashboard' :
+        S.view==='track' ? S.currentTrack?.title :
+        S.currentTask?.title
+      ),
+      h('div',{className:'mh-sub'},
+        S.view==='dashboard' ? `${S.tracks.length} tracks · ${S.tracks.reduce((a,t)=>a+t.task_count,0)} tasks` :
+        S.view==='track' ? `${S.currentTrack?.task_count} tasks` :
+        `${S.currentTrack?.title} · Task ${S.currentTask?.id}`
+      )
+    ),
+    (S.view==='track'||S.view==='task') && h('button',{className:'back-btn',onClick:()=>{
+      if(S.view==='task') ss({view:'track'});
+      else ss({view:'dashboard'});
+    }},
+      S.view==='task' ? '← Back to track' : '← Dashboard'
+    )
+  );
+  main.appendChild(header);
+
+  const content = h('div',{className:'main-content'});
+  if(S.view==='dashboard') content.appendChild(renderDashboard());
+  else if(S.view==='track') content.appendChild(renderTrack());
+  else if(S.view==='task') content.appendChild(renderTask());
+  main.appendChild(content);
+
+  shell.appendChild(main);
+  root.appendChild(shell);
+
+  // Modal
+  const modal = renderUpgradeModal();
+  if(modal) root.appendChild(modal);
+
+  // Scroll eval into view on submit
+  if(S.evalResult && !S.submitting) {
+    setTimeout(()=>{
+      const el = document.querySelector('.score-display');
+      if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },100);
+  }
+}
+
+window.addEventListener('resize', render);
+render();
+</script>
+</body>
+</html>
