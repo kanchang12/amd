@@ -66,6 +66,7 @@ input,textarea{font-family:var(--font);outline:none}
 
 /* MAIN */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+@media(max-width:860px){.main{overflow:auto}}
 .topbar{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:#fff;flex-shrink:0}
 .tb-title{font-size:15px;font-weight:700;flex:1}
 .tb-sub{font-size:11px;color:var(--muted)}
@@ -115,6 +116,7 @@ input,textarea{font-family:var(--font);outline:none}
 
 /* ── WORKSPACE — 3 column ── */
 .workspace{display:grid;grid-template-columns:320px 1fr 200px;gap:0;height:calc(100vh - 53px);overflow:hidden}
+@media(max-width:860px){.workspace{height:auto!important;overflow:visible!important}}
 /* LEFT — agent instructions */
 .agent-panel{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .ap-header{padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0}
@@ -211,8 +213,11 @@ input,textarea{font-family:var(--font);outline:none}
 
 @media(max-width:1100px){.workspace{grid-template-columns:280px 1fr 160px}}
 @media(max-width:860px){
-  .workspace{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;height:auto}
-  .agent-panel{max-height:360px}
+  .workspace{grid-template-columns:1fr;grid-template-rows:auto;height:auto;overflow:visible}
+  .agent-panel{max-height:300px;overflow-y:auto}
+  .work-panel{height:auto;overflow:visible}
+  .wp-body{height:auto;overflow:visible}
+  .prompt-textarea{min-height:180px}
   .blocks-panel{display:none}
 }
 @media(max-width:640px){
@@ -247,7 +252,7 @@ let S = {
   prompt:'', aiOutput:'', evalResult:null, coachHint:null, pathResult:null,
   loading:false, submitting:false, authErr:'',
   loginForm:{u:'',p:''}, signupForm:{u:'',e:'',p:''},
-  showUpgradeModal:false, upgradeSuccess:false, sidebarOpen:false,
+  showUpgradeModal:false, upgradeSuccess:false, sidebarOpen:false, mobileTab:'write',
 };
 function ss(p){S=Object.assign({},S,p);render();}
 
@@ -488,9 +493,19 @@ function renderTask(){
   const passed=S.progress[`${track?.id}_${task.id}`]?.passed;
   const blocks=task.blocks||[];
 
+  const agentClass = 'agent-panel'+(S.mobileTab==='instructions'?' mobile-active':'');
+  const workClass  = 'work-panel'+(S.mobileTab==='write'?' mobile-active':'');
+
   return h('div',{className:'workspace'},
+    // MOBILE TAB BAR
+    h('div',{className:'mobile-tab-bar'},
+      h('button',{className:'m-tab'+(S.mobileTab==='instructions'?' active':''),
+        onClick:()=>ss({mobileTab:'instructions'})},'📋 Instructions'),
+      h('button',{className:'m-tab'+(S.mobileTab==='write'?' active':''),
+        onClick:()=>ss({mobileTab:'write'})},'✍️ Write & Submit')
+    ),
     // LEFT — agent panel
-    h('div',{className:'agent-panel'},
+    h('div',{className:agentClass},
       h('div',{className:'ap-header'},
         h('div',{className:'ap-tag'},track?.icon+' '+track?.title+' · Task '+task.id),
         h('div',{className:'ap-title'},task.title),
@@ -540,7 +555,7 @@ function renderTask(){
       )
     ),
     // CENTER — work area
-    h('div',{className:'work-panel'},
+    h('div',{className:workClass},
       h('div',{className:'wp-top'},
         h('span',{className:'wp-top-title'},'✍️ Write your answer'),
         h('span',{className:'wp-chars',id:'char-count'},S.prompt.length+' chars'),
@@ -623,6 +638,9 @@ function render(){
   if(S.view==='login'||S.view==='signup'){root.appendChild(renderAuth());return;}
   const shell=h('div',{className:'shell'});
   shell.appendChild(renderSidebar());
+  // Sidebar overlay for mobile
+  const overlay=h('div',{className:'sidebar-overlay'+(S.sidebarOpen?' visible':''),onClick:()=>ss({sidebarOpen:false})});
+  shell.appendChild(overlay);
   const main=h('div',{className:'main'});
   // topbar
   main.appendChild(h('div',{className:'topbar'},
