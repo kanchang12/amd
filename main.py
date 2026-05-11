@@ -17,6 +17,7 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY", ""))
 DEFAULT_MODEL = "gemini-2.0-flash"
 DATABASE_URL  = os.getenv("DATABASE_URL", "")
 DEMO_MODE     = os.getenv("DEMO_MODE", "true").lower() == "true"
+VALID_COUPONS = {"FREE100"}
 
 app = FastAPI(title="PromptCraft")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -91,6 +92,9 @@ class SignupRequest(BaseModel):
     email: str
     password: str
 
+class UpgradeRequest(BaseModel):
+    coupon: Optional[str] = None
+
 @app.post("/api/login")
 def login(req: LoginRequest):
     with get_db() as conn:
@@ -116,12 +120,15 @@ def signup(req: SignupRequest):
     return {"username": req.username.lower(), "email": req.email.lower(), "plan": "free"}
 
 @app.post("/api/upgrade/{username}")
-def upgrade(username: str):
+def upgrade(username: str, req: UpgradeRequest = None):
+    coupon = (req.coupon or "").upper().strip() if req else ""
+    if coupon and coupon not in VALID_COUPONS:
+        raise HTTPException(400, "Invalid coupon code")
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute("UPDATE prompt_users SET plan='pro' WHERE username=%s", (username,))
-    return {"success": True, "plan": "pro", "demo": DEMO_MODE,
-            "message": "In production this processes £9.99/month via Stripe. Demo: instant upgrade."}
+    msg = "Coupon FREE100 applied — full access unlocked for free!" if coupon else "In production this processes £9.99/month via Stripe. Demo: instant upgrade."
+    return {"success": True, "plan": "pro", "demo": DEMO_MODE, "message": msg, "coupon_used": bool(coupon)}
 
 @app.get("/api/tracks")
 def tracks():
@@ -223,7 +230,7 @@ def submit(req: SubmitRequest):
             cur.execute("SELECT plan FROM prompt_users WHERE username=%s", (req.username,))
             row = cur.fetchone(); plan = row["plan"] if row else "free"
     if plan=="free" and task["id"] > TRACKS[req.track_id]["free_limit"]:
-        raise HTTPException(403, "This task requires Pro. Upgrade to unlock all 116 tasks.")
+        raise HTTPException(403, "This task requires Pro. Upgrade to unlock all tasks.")
     ai_output = llm("You are a helpful AI assistant. Answer clearly.",
                     [{"role":"user","content":req.user_prompt}], temperature=0.7, max_tokens=600)
     eval_result = run_eval_agent(task, req.user_prompt, ai_output)
