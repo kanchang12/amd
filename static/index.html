@@ -549,12 +549,14 @@ function renderTask(){
         )
       ),
       h('div',{className:'wp-body'},
-        h('textarea',{className:'prompt-textarea',
+        h('textarea',{className:'prompt-textarea',id:'main-prompt',
           placeholder:'Write your architecture decision / implementation plan / analysis here...\n\nInclude:\n• Your approach and reasoning\n• Technical decisions with justification\n• Trade-offs considered\n• Numbers and specifics\n\nClick blocks on the right to insert them as reference points.',
           onInput:e=>{
             S.prompt=e.target.value;
             const cc=document.getElementById('char-count');
             if(cc)cc.textContent=S.prompt.length+' chars';
+            const btn=document.querySelector('.submit-btn');
+            if(btn)btn.disabled=!S.prompt.trim()||S.submitting;
           }
         }),
         task.example&&h('div',{className:'example-card'},
