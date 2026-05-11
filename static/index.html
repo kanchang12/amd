@@ -229,6 +229,18 @@ input,textarea{font-family:var(--font);outline:none}
 <div id="root"></div>
 <script>
 const API = '';
+
+// ── Session persistence ───────────────────────────────────────────────────
+function saveSession(user) {
+  try { localStorage.setItem('devai_user', JSON.stringify(user)); } catch(e) {}
+}
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem('devai_user')); } catch(e) { return null; }
+}
+function clearSession() {
+  try { localStorage.removeItem('devai_user'); } catch(e) {}
+}
+
 let S = {
   view:'login', user:null, tracks:[], progress:{},
   currentTrack:null, currentTask:null, trackTasks:[],
@@ -267,6 +279,8 @@ async function doLogin(){
   try{
     const u=await apiFetch('/api/login',{username:S.loginForm.u,password:S.loginForm.p});
     await loadTracks();await loadProgress(u.username);
+    saveSession(u);
+    saveSession(u);
     ss({user:u,view:'dashboard',loading:false});
   }catch(e){ss({authErr:e.message,loading:false});}
 }
@@ -275,17 +289,22 @@ async function doSignup(){
   ss({loading:true,authErr:''});
   try{
     const u=await apiFetch('/api/signup',{username:S.signupForm.u,email:S.signupForm.e,password:S.signupForm.p});
-    await loadTracks();ss({user:u,view:'dashboard',loading:false});
+    await loadTracks();saveSession(u);
+    saveSession(u);
+    ss({user:u,view:'dashboard',loading:false});
   }catch(e){ss({authErr:e.message,loading:false});}
 }
 async function doUpgrade(){
   ss({loading:true});
   try{
-    await apiFetch(`/api/upgrade/${S.user.username}`);
+    const couponEl=document.getElementById('coupon-input');
+    const coupon=couponEl?couponEl.value.trim():'';
+    await apiFetch(`/api/upgrade/${S.user.username}`,{coupon});
     const u={...S.user,plan:'pro'};
+    saveSession(u);
     await loadTrackTasks(S.currentTrack?.id||'');
     ss({user:u,upgradeSuccess:true,loading:false});
-  }catch(e){ss({loading:false});}
+  }catch(e){ss({loading:false,authErr:e.message});}
 }
 async function doSubmit(){
   if(!S.prompt.trim())return;
@@ -404,7 +423,7 @@ function renderSidebar(){
         h('div',{className:'ub-demo'},'⚡ Demo: simulates payment instantly'),
         h('button',{className:'ub-btn',onClick:()=>ss({showUpgradeModal:true})},'Upgrade to Pro →')
       ),
-      h('button',{className:'logout-btn',onClick:()=>ss({view:'login',user:null,progress:{},tracks:[]})},'Sign out')
+      h('button',{className:'logout-btn',onClick:()=>{clearSession();ss({view:'login',user:null,progress:{},tracks:[]})}},'Sign out')
     )
   );
 }
@@ -588,6 +607,7 @@ function renderModal(){
         h('ul',{className:'feat-list'},
           ['All tasks across every track','EvalAgent + CoachAgent + PathAgent','Progress tracking & scoring','Concept blocks on every task','New tracks monthly'].map(f=>h('li',{},h('span',{className:'feat-check'},'✓'),f))
         ),
+        h('input',{type:'text',id:'coupon-input',style:{width:'100%',background:'#f0f0ee',border:'1px solid #e4e4e2',padding:'9px 12px',borderRadius:'7px',fontSize:'13px',marginBottom:'10px'},placeholder:'Coupon code (optional — try FREE100)'}),
         h('div',{className:'demo-box'},h('div',{className:'demo-box-title'},'⚡ Hackathon Demo'),h('div',{className:'demo-box-text'},'In production: Stripe. Here: instant simulate.')),
         h('button',{className:'pay-btn',onClick:doUpgrade},S.loading?[h('span',{className:'spin'}),' ...']:'🔓 Activate Pro (Demo)'),
         h('button',{className:'cancel-btn',onClick:()=>ss({showUpgradeModal:false})},'Maybe later')
@@ -625,6 +645,19 @@ function render(){
 }
 window.addEventListener('resize',render);
 render();
+
+// Restore session on load
+(async function() {
+  const saved = loadSession();
+  if (saved && saved.username) {
+    try {
+      await loadTracks();
+      await loadProgress(saved.username);
+      ss({user: saved, view: 'dashboard'});
+    } catch(e) { clearSession(); }
+  }
+})();
+
 </script>
 </body>
 </html>
